@@ -6,7 +6,7 @@ def create_app(test_config=None):
     app = Flask(__name__, instance_relative_config=True)
     app.config.from_mapping(
         SECRET_KEY='dev',
-        DEBUG=True
+        DEBUG=True,
     )
 
     if test_config is None:
@@ -22,15 +22,8 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # hello world
-    @app.route('/hello')
-    def hello():
-        return 'hello, world'
-
-    from . import views
-    from . import forms
+    with app.app_context():
+        from . import forms
+        from . import routes
 
     return app
-
-if __name__ == "__main__":
-    create_app()
