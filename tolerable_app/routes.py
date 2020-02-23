@@ -2,7 +2,9 @@ import copy
 from flask import current_app as app
 from flask import render_template, request, url_for, session, redirect
 from .forms import input_list_form_factory
-from .util import generate_empty_input_data, generate_empty_input, capture_input_list_form_items
+from .util import generate_empty_input_data, generate_empty_input, capture_input_list_form_items, update_session_inputs
+
+import sys
 
 # hello world
 @app.route('/hello')
@@ -26,15 +28,12 @@ def input():
         session['input_forms'] = generate_empty_input(input_form_id_num=0)
     
     # initialize form to pull data
+    print('form init', file=sys.stdout)
     input_list_form = input_list_form_factory(session['input_forms'])
 
     # CAPTURE INCOMING FORM DATA #
     # get input data from input list form
     input_forms = capture_input_list_form_items(input_list_form)
-
-    # STORE FORM DATA #
-    # (also used to regenerate input form list with correct types) #
-    session['input_forms'] = copy.deepcopy(input_forms)
 
     # CHECK AND PROCESS SUBMISSION #
     if input_list_form.submit_inputs.data:
@@ -50,21 +49,15 @@ def input():
             # for outputs, check if definition is session has changed AND whether any referenced inputs (independent vars) have changed
             # if so, update redis row for given output id and resimulated output data
             return redirect(url_for('output'))
+    else:
+        # otherwise, update session inputs
+        shape_mod_update_made = update_session_inputs(session['input_forms'], input_forms)
 
-    # otherwise, check for added and removed inputs and update form for rendering
-    # ADD INPUT #
-    if input_list_form.add_input.data:
-        session['input_forms'].setdefault(input_list_form.get_next_input_form_id(), generate_empty_input_data())
-
-    # REMOVE INPUT #
-    # can be removed during capture step... for now, explicit is better than abstracted
-    for input_form_id, input_form_data in input_forms.items():
-        if input_form_data['remove_input']:
-            session['input_forms'].pop(input_form_id, None)
-
-    # REGENERATE FORM #
-    # generate form with changes made (type, add, remove) for rendering
-    input_list_form = input_list_form_factory(session['input_forms'])
+        if shape_mod_update_made:
+            # REGENERATE FORM #
+            # generate form with changes made (type, add, remove) for rendering
+            print('form regen', file=sys.stdout)
+            input_list_form = input_list_form_factory(session['input_forms'])
 
     return render_template('input.html', form=input_list_form)
 
