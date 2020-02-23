@@ -1,0 +1,31 @@
+{% macro render_field(field) %}
+	{% if 'csrf_token' not in field.id %}
+		<p>
+		{{ field.label }}
+		{{ field }}
+		{% if field.errors %}
+			{% for error in field.errors %}
+				<span style="color: red;">[{{ error }}]</span>
+			{% endfor %}
+		{% endif %}
+		</p>
+	{% endif %}
+{% endmacro %}
+
+{% macro render_input(input_form, input_num) %}
+    <h4 class="input-label"><u>Input {{ input_num }}</u></h4>
+    {% for input_field in input_form %}
+        {# if the field is a detail field #}
+        {% if 'input_detail_fields' in input_field.id %}
+            {% for detail_field in input_field %}
+                {{ render_field(detail_field) }}
+            {% endfor %}
+        {# if the field is a submit button (used to remove inputs from list) #}
+        {% elif input_field.type == 'SubmitField' %}
+            <p>{{ input_field }}</p>
+        {# else, the field belongs to the a generic input form (name, type) #}
+        {% else %}
+            {{ render_field(input_field) }}
+        {% endif %}
+    {% endfor %}
+{% endmacro %}

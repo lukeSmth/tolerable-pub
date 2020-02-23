@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Inputs: {% endblock %}</h1>
+    <h3 class="subtitle">Include all independent variables and distributions</h3>
+{% endblock %}
+
+{% block content %}
+    <form method="post" action="" novalidate>
+        {{ form.hidden_tag() }}
+        {% for list_field in form %}
+            {# if the field is an input form #}
+            {% if 'inputform_' in list_field.id %}
+                {{ macros.render_input(list_field, loop.index) }}
+            {% endif %}
+        {% endfor %}
+        <div>
+        {{ form.add_input }}
+        {{ form.submit_inputs }}
+        </div>
+    </form>
+{% endblock %}

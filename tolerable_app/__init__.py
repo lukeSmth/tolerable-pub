@@ -25,5 +25,6 @@ def create_app(test_config=None):
     with app.app_context():
         from . import forms
         from . import routes
+        from . import util
 
     return app

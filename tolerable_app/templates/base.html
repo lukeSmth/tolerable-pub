@@ -1,0 +1,28 @@
+{% import 'macros.jinja' as macros %}
+
+<!DOCTYPE html>
+<title>{% block title%}{% endblock %} - Tolerable</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<nav>
+    <h1>Tolerable</h1>
+    <ul>
+        <li><a href="{{ url_for('index') }}">Home</a></li>
+        <li><a href="{{ url_for('new') }}">New Analysis</a></li>
+        {% if not request.path == url_for('index') %}
+            <li><a href="{{ url_for('input') }}">Input</a></li>
+            <li><a href="{{ url_for('output') }}">Output</a></li>
+            <li><a href="{{ url_for('settings') }}">Settings</a></li>
+            <li><a href="{{ url_for('result') }}">Result</a></li>
+            <li><a href="{{ url_for('report') }}">Report</a></li>
+        {% endif %}
+    </ul>
+</nav>
+<section class="content">
+    <header>
+        {% block header %}{% endblock %}
+    </header>
+    {% for message in get_flashed_messages() %}
+        <div class="flash">{{ message }}</div>
+    {% endfor %}
+    {% block content %}{% endblock %}
+</section>
