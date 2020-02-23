@@ -58,4 +58,4 @@ def update_session_inputs(session_input_forms, input_list_form):
     else:
         session_input_forms = input_forms
 
-    return shape_mod_update_made
+    return session_input_forms, shape_mod_update_made

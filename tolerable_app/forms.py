@@ -120,6 +120,7 @@ def input_form_factory(input_type='empty', removable=False, csrf=True, none_of=t
         # create input fields for generic input form
         input_name = StringField(
             'Input Name',
+            default='',
             validators=[DataRequired(), NoneOf(none_of, message='Input name must be unique. (Cannot be any of: %(values)s.)')],
             render_kw={
                 'onchange': 'this.form.submit()',
@@ -190,6 +191,9 @@ def input_list_form_factory(input_forms):
         this_input_name = input_form_data['input_name']
         # generate tuple of other input names
         other_names = tuple(input_name for input_name in input_names if not input_name == this_input_name)
+        # if the input name exists in the input_names tuple more than once, an error must be rendered
+        if input_names.count(this_input_name) > 1:
+            other_names = (*other_names, this_input_name)
         # pass unique form class to list of forms as formfield
         # setattr(InputListForm, input_form_id, FormField(InputForm))
         print(other_names, file=sys.stdout)

@@ -31,10 +31,6 @@ def input():
     print('form init', file=sys.stdout)
     input_list_form = input_list_form_factory(session['input_forms'])
 
-    # CAPTURE INCOMING FORM DATA #
-    # get input data from input list form
-    input_forms = capture_input_list_form_items(input_list_form)
-
     # CHECK AND PROCESS SUBMISSION #
     if input_list_form.submit_inputs.data:
         if input_list_form.validate_on_submit():
@@ -51,7 +47,7 @@ def input():
             return redirect(url_for('output'))
     else:
         # otherwise, update session inputs
-        shape_mod_update_made = update_session_inputs(session['input_forms'], input_forms)
+        session['input_forms'], shape_mod_update_made = update_session_inputs(session['input_forms'], input_list_form)
 
         if shape_mod_update_made:
             # REGENERATE FORM #
