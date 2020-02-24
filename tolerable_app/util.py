@@ -19,6 +19,7 @@ def capture_input_list_form_items(input_list_form):
         if (input_formfield.id in input_list_form.get_input_form_ids()):
             input_forms.setdefault(input_formfield.id, input_formfield.data)
 
+    print(input_forms)
     return input_forms
 
 def update_session_inputs(session_input_forms, input_list_form):
@@ -40,7 +41,7 @@ def update_session_inputs(session_input_forms, input_list_form):
     # check for added inputs
     if input_list_form.add_input.data:
         session_input_forms.setdefault(input_list_form.get_next_input_form_id(), generate_empty_input_data())
-        shape_mod_update_made = 'added empty input'
+        shape_mod_update_made = 'Added empty input'
     # check for removed inputs
     elif any(removed_input_ids):
         for removed_input_id in removed_input_ids:

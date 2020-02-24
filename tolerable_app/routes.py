@@ -28,9 +28,8 @@ def input():
         session['input_forms'] = generate_empty_input(input_form_id_num=0)
     
     # initialize form to pull data
-    print('form init', file=sys.stdout)
     input_list_form = input_list_form_factory(session['input_forms'])
-
+        
     # CHECK AND PROCESS SUBMISSION #
     if input_list_form.submit_inputs.data:
         if input_list_form.validate_on_submit():
@@ -44,6 +43,7 @@ def input():
             # (ensure input ids are removed from redis when removed in session)
             # for outputs, check if definition is session has changed AND whether any referenced inputs (independent vars) have changed
             # if so, update redis row for given output id and resimulated output data
+            session['input'] = input_list_form.data
             return redirect(url_for('output'))
     else:
         # otherwise, update session inputs
@@ -52,8 +52,11 @@ def input():
         if shape_mod_update_made:
             # REGENERATE FORM #
             # generate form with changes made (type, add, remove) for rendering
-            print('form regen', file=sys.stdout)
             input_list_form = input_list_form_factory(session['input_forms'])
+            pass
+    
+    if request.method == 'GET':
+        input_list_form = input_list_form_factory(session['input_forms'], fill=session['input'])
 
     return render_template('input.html', form=input_list_form)
 
@@ -62,7 +65,8 @@ def output():
     # check evaluable status with form validator (True, False)
     # can show list of valid inputs
     # and can also make suggestions (autocomplete option)
-    return render_template('output.html')
+    # return render_template('output.html')
+    return session['input_forms']
 
 @app.route('/settings')
 def settings():
