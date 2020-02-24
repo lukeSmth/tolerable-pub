@@ -28,8 +28,13 @@ def input():
         session['input_forms'] = generate_empty_input(input_form_id_num=0)
     
     # initialize form to pull data
-    input_list_form = input_list_form_factory(session['input_forms'])
-        
+    if request.method == 'GET':
+        input_list_form = input_list_form_factory(session['input_forms'], fill=session['input_forms'])
+        shape_mod_update_made = None
+    else:
+        input_list_form = input_list_form_factory(session['input_forms'])
+        session['input_forms'], shape_mod_update_made = update_session_inputs(session['input_forms'], input_list_form)
+
     # CHECK AND PROCESS SUBMISSION #
     if input_list_form.submit_inputs.data:
         if input_list_form.validate_on_submit():
@@ -43,20 +48,11 @@ def input():
             # (ensure input ids are removed from redis when removed in session)
             # for outputs, check if definition is session has changed AND whether any referenced inputs (independent vars) have changed
             # if so, update redis row for given output id and resimulated output data
-            session['input'] = input_list_form.data
             return redirect(url_for('output'))
-    else:
-        # otherwise, update session inputs
-        session['input_forms'], shape_mod_update_made = update_session_inputs(session['input_forms'], input_list_form)
-
-        if shape_mod_update_made:
-            # REGENERATE FORM #
-            # generate form with changes made (type, add, remove) for rendering
-            input_list_form = input_list_form_factory(session['input_forms'])
-            pass
-    
-    if request.method == 'GET':
-        input_list_form = input_list_form_factory(session['input_forms'], fill=session['input'])
+    elif shape_mod_update_made:
+        # REGENERATE FORM #
+        # generate form with changes made (type, add, remove) for rendering
+        input_list_form = input_list_form_factory(session['input_forms'])
 
     return render_template('input.html', form=input_list_form)
 
@@ -65,8 +61,7 @@ def output():
     # check evaluable status with form validator (True, False)
     # can show list of valid inputs
     # and can also make suggestions (autocomplete option)
-    # return render_template('output.html')
-    return session['input_forms']
+    return render_template('output.html', inputs=session['input_forms'])
 
 @app.route('/settings')
 def settings():

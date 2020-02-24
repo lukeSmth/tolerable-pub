@@ -123,7 +123,7 @@ def input_form_factory(input_type='empty', removable=False, csrf=True, none_of=t
             default='',
             validators=[DataRequired(), NoneOf(none_of, message='Input name must be unique. (Cannot be any of: %(values)s.)')],
             render_kw={
-                # 'onchange': 'this.form.submit()',
+                'onchange': 'this.form.submit()',
                 'onkeypress': 'return event.keyCode != 13;'
             }
         )
@@ -225,5 +225,4 @@ def input_list_form_factory(input_forms, fill=False):
     if fill:
         return InputListForm(data=fill)
     else:
-        print('no fill')
         return InputListForm()
