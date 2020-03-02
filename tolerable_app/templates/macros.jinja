@@ -23,9 +23,22 @@
         {# if the field is a submit button (used to remove inputs from list) #}
         {% elif input_field.type == 'SubmitField' %}
             <p>{{ input_field }}</p>
-        {# else, the field belongs to the a generic input form (name, type) #}
+        {# else, the field belongs to a generic input form (name, type) #}
         {% else %}
             {{ render_field(input_field) }}
+        {% endif %}
+    {% endfor %}
+{% endmacro %}
+
+{% macro render_output(output_form, output_num) %}
+    <h4 class="output-label"><u>Output {{ output_num }}</u></h4>
+    {% for output_field in output_form %}
+        {# if the field is a submit button (used to remove outputs from list) #}
+        {% if output_field.type == 'SubmitField' %}
+            <p>{{ output_field }}</p>
+        {# else, the field belongs to a generic output form (name, definition, etc.) #}
+        {% else %}
+            {{ render_field(output_field) }}
         {% endif %}
     {% endfor %}
 {% endmacro %}

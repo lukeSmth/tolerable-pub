@@ -60,3 +60,67 @@ def update_session_inputs(session_input_forms, input_list_form):
         shape_mod_update_made = 'Updated inputs types to {}'.format(', '.join(input_types))
 
     return session_input_forms, shape_mod_update_made
+
+def generate_empty_output_data():
+    return {
+            'output_name': '',
+            'output_defn': '',
+            'output_vis': True,
+            'remove_output': False
+    }
+
+def generate_empty_output(output_form_id_num):
+    output_form_id = 'outputform_{}'.format(output_form_id_num)
+    return {output_form_id: generate_empty_output_data()}
+
+def capture_output_list_form_items(output_list_form):
+    # get output data from output list form
+    output_forms = {}
+    for output_formfield in output_list_form:
+        # ensure each submitted formfield id exists in the designed output list form
+        # before capturing formfield data
+        if (output_formfield.id in output_list_form.get_output_form_ids()):
+            output_forms.setdefault(output_formfield.id, output_formfield.data)
+
+    return output_forms
+
+def update_session_outputs(output_list_form):
+    """Check each for each shape modification case (add, remove).
+    Only one shape modifying update can be made at a time.
+    Only one output can be added a time, but up to all of the outputs can be deleted (needs to be up to n-1) or type-modified at once"""
+
+    shape_mod_update_made = None
+
+    # grab the output forms from the list form data
+    output_forms = capture_output_list_form_items(output_list_form)
+
+    # ID for removed outputs
+    removed_output_ids = tuple(output_form_id for output_form_id, output_form_data in output_forms.items() if output_form_data['remove_output'] == True)
+
+    # complete a general update of the session_output_forms based on the output forms posted
+    session_output_forms = output_forms
+
+    # check for any shape modifying edits to the form
+    # check for added outputs
+    if output_list_form.add_output.data:
+        session_output_forms.setdefault(output_list_form.get_next_output_form_id(), generate_empty_output_data())
+        shape_mod_update_made = 'Added empty output'
+    # check for removed outputs
+    elif any(removed_output_ids):
+        for removed_output_id in removed_output_ids:
+            session_output_forms.pop(removed_output_id, None)
+        
+        shape_mod_update_made = 'Removed outputs {}'.format(', '.join(removed_output_ids))
+
+    return session_output_forms, shape_mod_update_made
+
+# search output definition for instances of (human readable) input names
+# replace each input name with a reference to the machine readable input
+def parse_definition(definition):
+    """Takes an output definition as a string and 
+    replaces instances of human readable input names
+    with machine readable references"""
+    hum_input_names = session['input_references'].values()
+    
+
+# attempt to evaluate definition *after* human readable input names have been converted

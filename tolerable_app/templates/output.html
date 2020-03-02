@@ -1,10 +1,22 @@
 {% extends 'base.html' %}
 
 {% block header %}
-    <h1>{% block title %}Output{% endblock %}</h1>
+    <h1>{% block title %}Outputs: {% endblock %}</h1>
+    <h3 class="subtitle">Include all dependent variables and distributions</h3>
 {% endblock %}
 
 {% block content %}
-    <p>Submit all dependent variables and distributions.</p>
-    {{ inputs }}
+    <form method="post" action="" novalidate>
+        {{ form.hidden_tag() }}
+        {% for list_field in form %}
+        {# if the field is an output form #}
+            {% if 'outputform_' in list_field.id %}
+                {{ macros.render_output(list_field, loop.index) }}
+            {% endif %}
+        {% endfor %}
+        <div>
+            {{ form.add_output }}
+            {{ form.submit_outputs }}
+        </div>
+    </form>
 {% endblock %}
