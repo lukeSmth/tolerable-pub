@@ -1,4 +1,5 @@
 import re
+from numpy import linspace
 
 def generate_empty_input_data():
     return {
@@ -121,7 +122,9 @@ def update_session_outputs(output_list_form):
 def parse_definition(hum_defn, translation):
     """Takes an output definition as a string and 
     replaces instances of human readable input names
-    with machine readable references"""
+    with machine readable references using the translation
+    table provided as a dictionary (translation)"""
+
     mach_defn = hum_defn
     hum_input_names = translation.keys()
     for hum_input_name in hum_input_names:
@@ -130,14 +133,59 @@ def parse_definition(hum_defn, translation):
             translation[hum_input_name]
         )
 
+    return mach_defn
+
 # find name like substrings (will be used to evaluate each on their own so the user will be aware
 # of all non-valid substrings in dependent definitions after first submission attempt)
+def find_namelike(hum_defn):
+    name_like_re = re.compile(r"((?:[a-zA-z] *(?:\w+\s?)+))")
+
+    return tuple(name_like.strip() for name_like in name_like_re.findall(hum_defn))
+
+# if a bad name is found, find similar valid names from the name list
+# rank the valid names by similarity and return
+def find_similar(bad_name, valid_names):
+
+    valid_name_rank = dict(zip(valid_names, linspace(0, 0, len(valid_names))))
+    for valid_name in valid_names:
+        last_good_char = 0
+        for char_num, __ in enumerate(bad_name):
+            if bad_name[last_good_char:char_num+1] in valid_name:
+                valid_name_rank[valid_name] += 1
+            else:
+                last_good_char = char_num+1
+
+    similar_names = tuple(ranked_item[0] for ranked_item in (
+        sorted(valid_name_rank.items(), key=lambda x: x[1], reverse=True)))
+    
+    return similar_names
+
 
 # attempt to evaluate definition *after* human readable input names have been converted
 
 # TODO:
-# simulate indepent values
+# simulate independent values
 # store simulated data in session and then redis
 # replace defined value names with 0s so definitions can be evaluated in a lightweight way
 # (what about multiplying array values, shape must be compatible -- should always be case if simulations are
 # re-run when N is changed and / or definitions are changed)
+
+if __name__ == "__main__":
+    defn = "Input 2 + 10 * 7234 + Inut 3"
+    namelike = find_namelike(defn)
+    # print(namelike)
+
+    translation = {'Input 2': '55', 'Input 3': '20'}
+
+    # bad_name_re = re.compile("'(.*)'")
+
+    for name in namelike:
+        try:
+            eval(parse_definition(name, translation))
+        except:
+            print("'{}' is not a defined value or mathematical reference".format(name))
+            similar_names = find_similar(name, translation.keys())
+            print("Did you mean {} or {}?".format(', '.join(similar_names[0:-1]), similar_names[-1]))
+    #     except NameError as e:
+    #         bad_name = bad_name_re.search(str(e))[1]
+    #         print("'{}' is not a defined value or mathematical reference".format(bad_name))
