@@ -1,3 +1,5 @@
+import re
+
 def generate_empty_input_data():
     return {
             'input_name': '',
@@ -116,11 +118,26 @@ def update_session_outputs(output_list_form):
 
 # search output definition for instances of (human readable) input names
 # replace each input name with a reference to the machine readable input
-def parse_definition(definition):
+def parse_definition(hum_defn, translation):
     """Takes an output definition as a string and 
     replaces instances of human readable input names
     with machine readable references"""
-    hum_input_names = session['input_references'].values()
-    
+    mach_defn = hum_defn
+    hum_input_names = translation.keys()
+    for hum_input_name in hum_input_names:
+        mach_defn = mach_defn.replace(
+            hum_input_name,
+            translation[hum_input_name]
+        )
+
+# find name like substrings (will be used to evaluate each on their own so the user will be aware
+# of all non-valid substrings in dependent definitions after first submission attempt)
 
 # attempt to evaluate definition *after* human readable input names have been converted
+
+# TODO:
+# simulate indepent values
+# store simulated data in session and then redis
+# replace defined value names with 0s so definitions can be evaluated in a lightweight way
+# (what about multiplying array values, shape must be compatible -- should always be case if simulations are
+# re-run when N is changed and / or definitions are changed)
