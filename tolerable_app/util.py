@@ -160,7 +160,6 @@ def find_similar(bad_name, valid_names):
     
     return similar_names
 
-
 # attempt to evaluate definition *after* human readable input names have been converted
 
 # TODO:

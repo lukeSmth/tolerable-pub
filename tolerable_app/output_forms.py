@@ -4,6 +4,7 @@ from wtforms import (
     HiddenField, FieldList, SubmitField, FormField
 )
 from wtforms.validators import ValidationError, DataRequired, NoneOf
+from symbolic import get_valid_names
 
 import sys
 
