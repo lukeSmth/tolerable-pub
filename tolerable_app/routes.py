@@ -73,13 +73,28 @@ def output():
     # INITIALIZE FORM #
     if not session.get('output_forms'):
         session['output_forms'] = generate_empty_output(output_form_id_num=0)
+
+    input_references = session.get('input_references')
+    output_names = tuple(output_data['output_name'] for output_data in session['output_forms'].values())
+
+    # defined names will be blank by default
+    session['defined_names'] = tuple(output_name for output_name in output_names if not output_name == '')
+
+    # get valid input names
+    if session.get('input_references'):
+        session['defined_names'] = (*tuple(input_references.keys()), *session['defined_names'])
     
     # initialize form to pull data
     if request.method == 'GET':
-        output_list_form = output_list_form_factory(session['output_forms'], fill=session['output_forms'])
+        output_list_form = output_list_form_factory(
+            session['output_forms'],
+            defined_names=session['defined_names'],
+            fill=session['output_forms'])
         shape_mod_update_made = None
     else:
-        output_list_form = output_list_form_factory(session['output_forms'])
+        output_list_form = output_list_form_factory(
+            session['output_forms'],
+            defined_names=session['defined_names'])
         session['output_forms'], shape_mod_update_made = update_session_outputs(output_list_form)
 
     # CHECK AND PROCESS SUBMISSION #
@@ -95,16 +110,20 @@ def output():
             # (ensure output ids are removed from redis when removed in session)
             # for outputs, check if definition is session has changed AND whether any referenced outputs (independent vars) have changed
             # if so, update redis row for given output id and resimulated output data
+            session['output_references'] = dict(zip(output_names, session['output_forms'].keys()))
             return redirect(url_for('settings'))
     elif shape_mod_update_made:
         # REGENERATE FORM #
         # generate form with changes made (add, remove) for rendering
-        output_list_form = output_list_form_factory(session['output_forms'])
+        output_list_form = output_list_form_factory(
+            session['output_forms'],
+            defined_names=session['defined_names'])
+
+        print(output_list_form.data)
     
     # check evaluable status with form validator (True, False)
     # can show list of valid inputs to use in definition
     # and can also make suggestions (autocomplete option)
-    print(session['output_forms'])
     return render_template('output.html', form=output_list_form, inputs=session['input_forms'])
 
 @app.route('/settings')

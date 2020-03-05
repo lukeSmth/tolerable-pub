@@ -4,11 +4,59 @@ from wtforms import (
     HiddenField, FieldList, SubmitField, FormField
 )
 from wtforms.validators import ValidationError, DataRequired, NoneOf
-from symbolic import get_valid_names
+from .symbolic import find_bad_names, get_valid_names, parse_definition, evaluate
 
-import sys
+import sys  
 
-def output_form_factory(removable=False, csrf=True, none_of=tuple()):
+
+def use_valid_names(defined_names=tuple()):
+    if defined_names:
+        message_1 = 'Undefined names and / or mathematical references: {}.'
+        message_2 = ' Did you mean to use one of these: {}?'
+    else:
+        message_1 = 'Undefined names and / or mathematical references: {}.'
+        message_2 = '{}'
+    
+    def _use_valid_names(form, field):
+        this_name = form.output_name.data
+        non_circ_defined_names = tuple(defined_name for defined_name in defined_names if not defined_name == this_name)
+        
+        if len(non_circ_defined_names) > 1:
+            message = message_1 + message_2
+        else:
+            message = message_1
+        
+        hum_defn = field.data
+        
+        bad_names = find_bad_names(hum_defn, get_valid_names(defined_names=non_circ_defined_names))
+        
+        if bad_names:
+            raise ValidationError(message.format(', '.join(bad_names), ', '.join(non_circ_defined_names)))
+
+    return _use_valid_names
+
+
+def can_evaluate(defined_names=tuple(), message=None):
+    if not message:
+        message = 'Definition cannot be mathematically evaluated.'
+    else:
+        message = message
+
+    translation = {defined_name: '1' for defined_name in defined_names}
+
+    def _can_evaluate(form, field):
+        hum_defn = field.data
+        mach_defn = parse_definition(hum_defn, translation)
+        try:
+            evaluate(mach_defn)
+        except:
+            raise ValidationError(message)
+
+    return _can_evaluate
+
+
+
+def output_form_factory(removable=False, csrf=True, none_of=tuple(), defined_names=tuple()):
     class OutputForm(FlaskForm):
         if not csrf:
             class Meta:
@@ -32,7 +80,10 @@ def output_form_factory(removable=False, csrf=True, none_of=tuple()):
         output_defn = StringField(
             'Output Definition',
             default='',
-            validators=[DataRequired()],
+            validators=[
+                DataRequired(),
+                use_valid_names(defined_names=defined_names),
+                can_evaluate(defined_names=defined_names)],
             render_kw={
                 'onchange': 'this.form.submit()',
                 'onkeypress': 'return event.keyCode != 13;'
@@ -60,7 +111,7 @@ def output_form_factory(removable=False, csrf=True, none_of=tuple()):
     # return custom import form
     return OutputForm
 
-def output_list_form_factory(output_forms, fill=False):
+def output_list_form_factory(output_forms, defined_names=tuple(), fill=False):
     class OutputListForm(FlaskForm):
         output_form_ids = []
 
@@ -101,7 +152,8 @@ def output_list_form_factory(output_forms, fill=False):
             FormField(output_form_factory(
                     removable=removable,
                     csrf=False,
-                    none_of=other_names
+                    none_of=other_names,
+                    defined_names=defined_names
                 ),
             )
         )

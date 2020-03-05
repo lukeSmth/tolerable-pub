@@ -27,5 +27,6 @@ def create_app(test_config=None):
         from . import output_forms
         from . import routes
         from . import util
+        from . import symbolic
 
     return app

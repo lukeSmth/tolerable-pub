@@ -117,14 +117,11 @@ reserved_dict = dict(zip(reserved_names, reserved_values))
 def get_valid_names(defined_names=tuple()):
     return (*reserved_names, *defined_names)
 
+
 def find_bad_names(hum_defn, valid_names):
     name_likes = find_name_like(hum_defn)
     return tuple(name_like for name_like in name_likes if not name_like in valid_names)
 
-def validate_defn(hum_defn, defined_names):
-    bad_names = find_bad_names(hum_defn, get_valid_names(defined_names))
-    for bad_name in bad_names:
-        print('{} is not a valid defined name or allowed mathematical function.'.format(bad_name))
 
 # search output definition for instances of (human readable) input names
 # replace each input name with a reference to the machine readable input
@@ -172,6 +169,17 @@ def find_similar(bad_name, valid_names):
     return similar_names
 
 
+def evaluate(mach_defn, local_dict=None, global_dict=None, transformation=None):
+    if not transformation:
+        transformations = tuple(transformation for transformation in standard_transformations \
+            if not transformation == auto_symbol)
+
+    return parse_expr(mach_defn,
+                      local_dict=local_dict,
+                      global_dict=global_dict,
+                      transformations=transformation)
+
+
 if __name__ == "__main__":
     # Set names of all independent AND dependent vars as sympy symbols
     # Take user definition input
@@ -181,5 +189,4 @@ if __name__ == "__main__":
     # Search valid symbols for similar term
     # Return error to user with suggested valid terms
 
-    transformations = tuple(transformation for transformation in standard_transformations \
-        if not transformation == auto_symbol)
+    pass
