@@ -2,8 +2,13 @@
 
 {% block header %}
     <h1>{% block title %}Result{% endblock %}</h1>
+    <h3 class="subtitle">Simulation results</h3>
 {% endblock %}
 
 {% block content %}
-    <p>Simulation results.</p>
+    {{ session['input_forms'] }}
+    <br>
+    {{ session['output_forms'] }}
+    <br>
+    {{ session['settings'] }}
 {% endblock %}

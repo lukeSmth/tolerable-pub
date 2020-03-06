@@ -1,4 +1,5 @@
 import copy
+from .forms import SettingsForm
 from flask import current_app as app
 from flask import render_template, request, url_for, session, redirect
 from .input_forms import input_list_form_factory
@@ -11,25 +12,46 @@ from .util import (
     generate_empty_output_data,
     generate_empty_output,
     capture_output_list_form_items,
-    update_session_outputs
+    update_session_outputs,
+    capture_settings
 )
 
-import sys
+
+# TODO / NOTES #
+
+# modify input and output form implementation so that blank session objects are not created?
+# or just handle blank inputs / outputs in simulation attempt
+# a blank input will allow an output definition of "1 +   * 2" because there's an implicit ''?
+
+# add each input as a valid input for use in output definitions
+# form defintion needs to include validators for unique names
+# use session var for now, redis in future
+# store input and output params in session before simulate is called
+# store input and output params AND simulated data is redis after sim call
+# upon later simulate calls, check input params in session against input params for simulated data
+# if they vary, update redis row for given input id and resimulated input data
+# (ensure input ids are removed from redis when removed in session)
+# for outputs, check if definition is session has changed AND whether any referenced inputs (independent vars) have changed
+# if so, update redis row for given output id and resimulated output data
+
 
 # hello world
 @app.route('/hello')
 def hello():
     return app.root_path
 
+
 @app.route('/index')
 @app.route('/')
 def index():
     return render_template('index.html')
 
+
 @app.route('/new')
 def new():
     session.clear()
     return redirect(url_for('input'))
+
 
 @app.route('/input', methods=['POST', 'GET'])
 def input():
@@ -48,16 +70,6 @@ def input():
     # CHECK AND PROCESS SUBMISSION #
     if input_list_form.submit_inputs.data:
         if input_list_form.validate_on_submit():
-            # add each input as a valid input for use in output definitions
-            # form defintion needs to include validators for unique names
-            # use session var for now, redis in future
-            # store input and output params in session before simulate is called
-            # store input and output params AND simulated data is redis after sim call
-            # upon later simulate calls, check input params in session against input params for simulated data
-            # if they vary, update redis row for given input id and resimulated input data
-            # (ensure input ids are removed from redis when removed in session)
-            # for outputs, check if definition is session has changed AND whether any referenced inputs (independent vars) have changed
-            # if so, update redis row for given output id and resimulated output data
             input_names = (input_data['input_name'] for input_data in session['input_forms'].values())
             session['input_references'] = dict(zip(input_names, session['input_forms'].keys()))
             return redirect(url_for('output'))
@@ -67,6 +79,7 @@ def input():
         input_list_form = input_list_form_factory(session['input_forms'])
 
     return render_template('input.html', form=input_list_form)
+
 
 @app.route('/output', methods=['POST', 'GET'])
 def output():
@@ -100,16 +113,6 @@ def output():
     # CHECK AND PROCESS SUBMISSION #
     if output_list_form.submit_outputs.data:
         if output_list_form.validate_on_submit():
-            # add each output as a valid output for use in output definitions
-            # form defintion needs to include validators for unique names
-            # use session var for now, redis in future
-            # store output and output params in session before simulate is called
-            # store output and output params AND simulated data is redis after sim call
-            # upon later simulate calls, check output params in session against output params for simulated data
-            # if they vary, update redis row for given output id and resimulated output data
-            # (ensure output ids are removed from redis when removed in session)
-            # for outputs, check if definition is session has changed AND whether any referenced outputs (independent vars) have changed
-            # if so, update redis row for given output id and resimulated output data
             session['output_references'] = dict(zip(output_names, session['output_forms'].keys()))
             return redirect(url_for('settings'))
     elif shape_mod_update_made:
@@ -121,22 +124,29 @@ def output():
 
         print(output_list_form.data)
     
-    # check evaluable status with form validator (True, False)
-    # can show list of valid inputs to use in definition
-    # and can also make suggestions (autocomplete option)
     return render_template('output.html', form=output_list_form, inputs=session['input_forms'])
 
-@app.route('/settings')
+
+@app.route('/settings', methods=['POST', 'GET'])
 def settings():
-    return render_template('settings.html')
+    settings_form = SettingsForm()
+
+    if settings_form.validate_on_submit():
+        session['settings'] = capture_settings(settings_form)
+        return redirect(url_for('result'))
+
+    return render_template('settings.html', form=settings_form)
+
 
 @app.route('/simulate')
 def simulate():
     pass
 
+
 @app.route('/result')
 def result():
     return render_template('result.html')
+
 
 @app.route('/report')
 def report():

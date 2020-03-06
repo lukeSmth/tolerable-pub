@@ -23,6 +23,7 @@ def create_app(test_config=None):
         pass
 
     with app.app_context():
+        from . import forms
         from . import input_forms
         from . import output_forms
         from . import routes

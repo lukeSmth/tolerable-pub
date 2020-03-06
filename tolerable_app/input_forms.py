@@ -5,8 +5,6 @@ from wtforms import (
 )
 from wtforms.validators import ValidationError, DataRequired, NoneOf
 
-import sys
-
 class EmptyInputDetailsForm(FlaskForm):
     class Meta:
         csrf = False

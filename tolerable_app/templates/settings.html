@@ -1,9 +1,21 @@
 {% extends 'base.html' %}
+{% import 'macros.jinja' as macros %}
 
 {% block header %}
     <h1>{% block title %}Settings{% endblock %}</h1>
+    <h3 class="subtitle">Modify simulation settings</h3>
 {% endblock %}
 
 {% block content %}
-    <p>Modify simulation settings</p>
+<form method="post" action="" novalidate>
+    {{ form.hidden_tag() }}
+    {% for field in form %}
+        {% if not field.type == 'SubmitField' %}
+            {{ macros.render_field(field) }}
+        {% endif %}
+    {% endfor %}
+    <div>
+        {{ form.submit_settings }}
+    </div>
+</form>
 {% endblock %}

@@ -188,3 +188,8 @@ if __name__ == "__main__":
     #     except NameError as e:
     #         bad_name = bad_name_re.search(str(e))[1]
     #         print("'{}' is not a defined value or mathematical reference".format(bad_name))
+
+
+def capture_settings(settings_form):
+    return {setting_name: setting_value for setting_name, setting_value in settings_form.data.items() \
+        if 'setting_' in setting_name}

@@ -6,8 +6,6 @@ from wtforms import (
 from wtforms.validators import ValidationError, DataRequired, NoneOf
 from .symbolic import find_bad_names, get_valid_names, parse_definition, evaluate
 
-import sys  
-
 
 def use_valid_names(defined_names=tuple()):
     if defined_names:
