@@ -19,6 +19,8 @@ from .util import (
 
 # TODO / NOTES #
 
+# create utility method to convert form data to verified input / output (currently done in route)
+
 # modify input and output form implementation so that blank session objects are not created?
 # or just handle blank inputs / outputs in simulation attempt
 # a blank input will allow an output definition of "1 +   * 2" because there's an implicit ''?
@@ -70,8 +72,15 @@ def input():
     # CHECK AND PROCESS SUBMISSION #
     if input_list_form.submit_inputs.data:
         if input_list_form.validate_on_submit():
-            input_names = (input_data['input_name'] for input_data in session['input_forms'].values())
-            session['input_references'] = dict(zip(input_names, session['input_forms'].keys()))
+            session['inputs'] = {input_id: {
+                                        'input_name': input_data['input_name'],
+                                        'input_type': input_data['input_type'],
+                                        'input_details': input_data['input_detail_fields']
+                                    } for input_id, input_data in session['input_forms'].items()
+                                }
+
+            session['input_names'] = tuple(input_data['input_name'] for input_data in session['inputs'].values())
+
             return redirect(url_for('output'))
     elif shape_mod_update_made:
         # REGENERATE FORM #
@@ -87,40 +96,42 @@ def output():
     if not session.get('output_forms'):
         session['output_forms'] = generate_empty_output(output_form_id_num=0)
 
-    input_references = session.get('input_references')
-    output_names = tuple(output_data['output_name'] for output_data in session['output_forms'].values())
+    current_output_names = tuple(output_data['output_name'] for output_data in session['output_forms'].values())
 
-    # defined names will be blank by default
-    session['defined_names'] = tuple(output_name for output_name in output_names if not output_name == '')
-
-    # get valid input names
-    if session.get('input_references'):
-        session['defined_names'] = (*tuple(input_references.keys()), *session['defined_names'])
+    defined_names = (*current_output_names, *session.get('input_names'))
     
     # initialize form to pull data
     if request.method == 'GET':
         output_list_form = output_list_form_factory(
             session['output_forms'],
-            defined_names=session['defined_names'],
+            defined_names=defined_names,
             fill=session['output_forms'])
         shape_mod_update_made = None
     else:
         output_list_form = output_list_form_factory(
             session['output_forms'],
-            defined_names=session['defined_names'])
+            defined_names=defined_names)
         session['output_forms'], shape_mod_update_made = update_session_outputs(output_list_form)
 
     # CHECK AND PROCESS SUBMISSION #
     if output_list_form.submit_outputs.data:
         if output_list_form.validate_on_submit():
-            session['output_references'] = dict(zip(output_names, session['output_forms'].keys()))
+            session['outputs'] = {output_id: {
+                                        'output_name': output_data['output_name'],
+                                        'output_defn': output_data['output_defn'],
+                                        'output_vis': output_data['output_vis']
+                                    } for output_id, output_data in session['output_forms'].items()
+                                }
+
+            session['output_names'] = tuple(output_data['output_name'] for output_data in session['outputs'].values())
+
             return redirect(url_for('settings'))
     elif shape_mod_update_made:
         # REGENERATE FORM #
         # generate form with changes made (add, remove) for rendering
         output_list_form = output_list_form_factory(
             session['output_forms'],
-            defined_names=session['defined_names'])
+            defined_names=defined_names)
 
         print(output_list_form.data)
     

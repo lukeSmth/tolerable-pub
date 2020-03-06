@@ -30,7 +30,7 @@ from sympy import (
                 sin,
                 sinc,
                 sinh,
-                sqf_part,
+                sqrt,
                 tan,
                 tanh
 )
@@ -70,7 +70,7 @@ reserved_values = (
         sin,
         sinc,
         sinh,
-        sqf_part,
+        sqrt,
         tan,
         tanh
 )
@@ -106,7 +106,7 @@ reserved_names = (
         'sin',
         'sinc',
         'sinh',
-        'sqf_part',
+        'sqrt',
         'tan',
         'tanh'
 )
@@ -177,7 +177,15 @@ def evaluate(mach_defn, local_dict=None, global_dict=None, transformation=None):
     return parse_expr(mach_defn,
                       local_dict=local_dict,
                       global_dict=global_dict,
-                      transformations=transformation)
+                      transformations=transformations)
+
+
+# TODO:
+# simulate independent values
+# store simulated data in session and then redis
+# replace defined value names with 0s so definitions can be evaluated in a lightweight way
+# (what about multiplying array values, shape must be compatible -- should always be case if simulations are
+# re-run when N is changed and / or definitions are changed)
 
 
 if __name__ == "__main__":
