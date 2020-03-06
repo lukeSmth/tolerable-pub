@@ -1,3 +1,5 @@
+# from . import symbolic as sym
+
 # DISTRIBUTION SIMULATION #
 import numpy as np
 
@@ -63,7 +65,7 @@ def sim_discrete():
 def sim_inputs(inputs=None, settings=None):
     """Simulates inputs according to the input type and details.
 
-    - Accepts inputs of the form {input_id: {'input_name': ..., 'input_type': ..., 'input_details': {...}}}
+    - Accepts inputs of the form {input id: {'input_name': ..., 'input_type': ..., 'input_details': {...}}}
         - Valid input types: 'constant', 'normal', 'uniform'
     - Accepts settings of the form {'setting_alpha': ..., 'setting_n': ...}"""
 
@@ -72,28 +74,85 @@ def sim_inputs(inputs=None, settings=None):
     
     if inputs:
         sim_input = {'constant': sim_constant, 'normal': sim_normal, 'uniform': sim_uniform}
+        inputs_data = {}
 
         for input_id, input_spec in inputs.items():
-            sim_data = sim_input[input_spec['input_type']](
-                                            input_details=input_spec['input_details'],
-                                            settings=settings)
+            input_data = sim_input[input_spec['input_type']](input_details=input_spec['input_details'],
+                                                            settings=settings)
             
-            print(sim_data)
+            inputs_data.setdefault(input_spec['input_name'], input_data)
+
+        return inputs_data
+
+    return None
 
 
-def sim_outputs(outputs=None, settings=None):
+def sim_outputs(outputs=None, inputs_data=None, settings=None):
     """Simulates outputs according to the output definition.
 
-    - Accepts outputs of the form {output_id: {'output_name': ..., 'output_defn': ..., 'output_vis': ...}}
-    - Accepts settings of the form {'setting_alpha': ..., 'setting_n': ...}"""
+    - Accepts outputs of the form {output id: {'output_name': ..., 'output_defn': ..., 'output_vis': ...}}
+    - Accepts inputs_data of the form {input name: array-like input data}
+    - Accepts settings of the form {'setting_alpha': ..., 'setting_n': ...}
+    
+    *Variables referenced in output definition will be simulated if they have not been already."""
 
+    if not settings:
+        settings = {'setting_alpha': 0.05, 'setting_n': 100}
+    
+    if outputs:
+        outputs_data = {}
+
+        for output_id, output_spec in outputs.items():
+            hum_defn = output_spec['output_defn']
+            mach_defn = sym.parse_definition(hum_defn, inputs_data)
+            output_data = sym.evaluate(mach_defn)
+
+            outputs_data.setdefault(input_spec['input_name'], output_data)
+
+        return outputs_data
+
+    return None
 
 def sim(inputs=None, outputs=None, settings=None):
     """Simulates inputs and outputs according to the input type and details and output definition.
 
-    - Accepts inputs of the form {input_id: {'input_name': ..., 'input_type': ..., 'input_details': {...}}}
-    - Accepts outputs of the form {output_id: {'output_name': ..., 'output_defn': ..., 'output_vis': ...}}
+    - Accepts inputs of the form {input id: {'input_name': ..., 'input_type': ..., 'input_details': {...}}}
+    - Accepts outputs of the form {output id: {'output_name': ..., 'output_defn': ..., 'output_vis': ...}}
     - Accepts settings of the form {'setting_alpha': ..., 'setting_n': ...}"""
+
+
+def plot_input_data(inputs_data=None, normalize=True, bin_width=None):
+    if not bin_width:
+        # Generate bin edges for each input
+        all_bin_edges = []
+        for input_data in inputs_data.values():
+            all_bin_edges.append(np.histogram_bin_edges(input_data, bins='fd'))
+
+        # Discover bin intervals for each input
+        all_bin_widths = []
+        for input_bin_edges in all_bin_edges:
+            all_bin_widths.append(input_bin_edges[1] - input_bin_edges[0])
+
+        # Determine max bin interval
+        bin_width = max(all_bin_widths)
+
+    fig, ax = plt.subplots()
+
+    prop_iter = iter(plt.rcParams['axes.prop_cycle'])
+
+    for input_name, input_data in inputs_data.items():
+        # if input type is constant (all values in array match), plot as bar, not histogram
+        if not all(input_data == input_data[0]):
+            # Create bin edges for each input using calculated max bin interval
+            input_bin_edges = np.arange(min(input_data), max(input_data), bin_width)
+            ax.hist(input_data, bins=input_bin_edges, density=normalize, color=next(prop_iter)['color'], alpha=0.5, label=input_name)
+        else:
+            if normalize:
+                ax.bar(input_data[0], 1.0, bin_width, color=next(prop_iter)['color'], alpha=0.5, label=input_name)
+            else:
+                ax.bar(input_data[0], len(input_data), bin_width, color=next(prop_iter)['color'], alpha=0.5, label=input_name)
+
+    return fig, ax
 
 
 # TODO #
@@ -108,12 +167,27 @@ def sim(inputs=None, outputs=None, settings=None):
 
 
 if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+    import symbolic as sym
+
     inputs = {
         'inputform_0': {'input_details': {'constant_input_value': 5.0}, 'input_name': 'Hello', 'input_type': 'constant'},
         'inputform_1': {'input_details': {'normal_input_mean': 5.0, 'normal_input_stdev': 10.0},'input_name': 'Hello2', 'input_type': 'normal'},
         'inputform_2': {'input_details': {'uniform_input_max': 5.0, 'uniform_input_min': -5.0}, 'input_name': 'Hello3', 'input_type': 'uniform'}
     }
 
+    outputs = {
+        'outputform_0': {'output_defn': 'pi * Hello', 'output_name': 'Pi', 'output_vis': True},
+        'outputform_1': {'output_defn': 'Pi * 2', 'output_name': 'Test', 'output_vis': False}
+    }
+
     settings = {'setting_alpha': 0.05, 'setting_n': 5000}
 
-    sim_inputs(inputs, settings)
+    inputs_data = sim_inputs(inputs, settings)
+
+    outputs_data = sim_outputs(outputs=outputs, inputs_data=inputs_data)
+
+    fig, ax = plot_input_data(inputs_data)
+
+    ax.legend()
+    plt.show()
