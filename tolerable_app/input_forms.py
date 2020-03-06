@@ -30,7 +30,7 @@ class NormInputDetailsForm(FlaskForm):
     class Meta:
         csrf = False
 
-    norm_input_mean = FloatField(
+    normal_input_mean = FloatField(
         'Mean',
         validators=[DataRequired(message='This field is required.')],
         render_kw={
@@ -39,7 +39,7 @@ class NormInputDetailsForm(FlaskForm):
         }
     )
 
-    norm_input_stdev = FloatField(
+    normal_input_stdev = FloatField(
         'St. Dev.',
         validators=[DataRequired(message='This field is required.')],
         render_kw={
@@ -82,7 +82,7 @@ def input_form_factory(input_type='empty', removable=False, csrf=True, none_of=t
         input_type_tags = (
             'empty',
             'constant',
-            'norm',
+            'normal',
             'uniform'
         )
 
