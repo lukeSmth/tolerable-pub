@@ -119,7 +119,7 @@ def get_valid_names(defined_names=tuple()):
 
 
 def find_bad_names(hum_defn, valid_names):
-    name_likes = find_name_like(hum_defn)
+    name_likes = find_name_like(hum_defn, get_span=False)
     return tuple(name_like for name_like in name_likes if not name_like in valid_names)
 
 
@@ -134,18 +134,22 @@ def parse_definition(hum_defn, translation):
     mach_defn = hum_defn
 
     name_likes = find_name_like(hum_defn)
-    for name_like in name_likes:
-        mach_defn = mach_defn.replace(name_like, translation.get(name_like, name_like))
+    for (name_like, name_like_start, name_like_end) in name_likes:
+        mach_defn[name_like_start:name_like_end] = translation.get(name_like, name_like)
 
     return mach_defn
 
 
 # find name like substrings (will be used to evaluate each on their own so the user will be aware
 # of all non-valid substrings in dependent definitions after first submission attempt)
-def find_name_like(hum_defn):
+def find_name_like(hum_defn, get_span=True):
     name_like_re = re.compile(r"((?:[a-zA-z] *(?:\w+\s?)+))")
 
-    return tuple(name_like.strip() for name_like in name_like_re.findall(hum_defn))
+    if get_span:
+        return tuple((name_like.group().strip(), name_like.span()[0], name_like.span()[0] + len(name_like.group())) \
+            for name_like in name_like_re.finditer(hum_defn))
+    else:
+        return (name_like.strip() for name_like in name_like_re.findall(hum_defn))
 
 
 # if a bad name is found, find similar valid names from the name list
@@ -216,12 +220,16 @@ if __name__ == "__main__":
         'inputform_2': np.array([-1.09475729, -3.62952259, -2.19693445,  0.72031821,  1.25388151])
     }
 
-    hum_defn = '(Hello 2 + Hello 3) * pi'
+    hum_defn = '(Hello 2 + Hello 2 + Hello) * pi'
 
-    mach_defn = parse_definition(hum_defn, {input_spec['input_name']: input_id for input_id, input_spec in inputs.items()})
+    # mach_defn = parse_definition(hum_defn, {input_spec['input_name']: input_id for input_id, input_spec in inputs.items()})
 
-    f = lambdify(inputs_data.keys(), mach_defn, 'numpy')
-    print(f(*inputs_data.values()))
+    # f = lambdify(inputs_data.keys(), mach_defn, 'numpy')
+    # print(f(*inputs_data.values()))
+
+    print(find_name_like(hum_defn))
+
+    print(find_bad_names('Hello 3 + Hello 2', ('Hello', 'Hello 2', 'Hello 3')))
 
     # user definitions can only include defined names or global names (whitelisted) packaged in a mathematically
     # valid string* (the string is eval'd to ensure it's mathematically valid). Is it possible to name an input 
