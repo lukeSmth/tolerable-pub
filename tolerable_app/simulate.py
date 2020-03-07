@@ -169,6 +169,7 @@ def plot_input_data(inputs_data=None, normalize=True, bin_width=None):
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import symbolic as sym
+    
 
     inputs = {
         'inputform_0': {'input_details': {'constant_input_value': 5.0}, 'input_name': 'Hello', 'input_type': 'constant'},
@@ -181,11 +182,13 @@ if __name__ == "__main__":
         'outputform_1': {'output_defn': 'Pi * 2', 'output_name': 'Test', 'output_vis': False}
     }
 
-    settings = {'setting_alpha': 0.05, 'setting_n': 5000}
+    settings = {'setting_alpha': 0.05, 'setting_n': 5}
 
     inputs_data = sim_inputs(inputs, settings)
 
-    outputs_data = sim_outputs(outputs=outputs, inputs_data=inputs_data)
+    print(inputs_data)
+
+    # outputs_data = sim_outputs(outputs=outputs, inputs_data=inputs_data)
 
     fig, ax = plot_input_data(inputs_data)
 

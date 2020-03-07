@@ -132,12 +132,10 @@ def parse_definition(hum_defn, translation):
     table provided as a dictionary (translation)"""
 
     mach_defn = hum_defn
-    hum_input_names = translation.keys()
-    for hum_input_name in hum_input_names:
-        mach_defn = mach_defn.replace(
-            hum_input_name,
-            translation[hum_input_name]
-        )
+
+    name_likes = find_name_like(hum_defn)
+    for name_like in name_likes:
+        mach_defn = mach_defn.replace(name_like, translation.get(name_like, name_like))
 
     return mach_defn
 
@@ -197,4 +195,39 @@ if __name__ == "__main__":
     # Search valid symbols for similar term
     # Return error to user with suggested valid terms
 
-    pass
+    from sympy import symbols, sympify, lambdify
+    import numpy as np
+    
+    inputs = {
+        'inputform_0': {'input_details': {'constant_input_value': 5.0}, 'input_name': 'Hello', 'input_type': 'constant'},
+        'inputform_1': {'input_details': {'normal_input_mean': 5.0, 'normal_input_stdev': 10.0},'input_name': 'Hello 2', 'input_type': 'normal'},
+        'inputform_2': {'input_details': {'uniform_input_max': 5.0, 'uniform_input_min': -5.0}, 'input_name': 'Hello 3', 'input_type': 'uniform'}
+    }
+
+    # inputs_data = {
+    #     'inputform_0': {'input_name': 'Hello', 'input_data': np.array([5., 5., 5., 5., 5.])},
+    #     'inputform_1': {'input_name': 'Hello 2', 'input_data': np.array([15.13925948,  7.21411871,  6.04247014, 12.46550976, 13.57085401])},
+    #     'inputform_2': {'input_name': 'Hello 3', 'input_data': np.array([-1.09475729, -3.62952259, -2.19693445,  0.72031821,  1.25388151])}
+    # }
+
+    inputs_data = {
+        'inputform_0': np.array([5., 5., 5., 5., 5.]),
+        'inputform_1': np.array([15.13925948,  7.21411871,  6.04247014, 12.46550976, 13.57085401]),
+        'inputform_2': np.array([-1.09475729, -3.62952259, -2.19693445,  0.72031821,  1.25388151])
+    }
+
+    hum_defn = '(Hello 2 + Hello 3) * pi'
+
+    mach_defn = parse_definition(hum_defn, {input_spec['input_name']: input_id for input_id, input_spec in inputs.items()})
+
+    f = lambdify(inputs_data.keys(), mach_defn, 'numpy')
+    print(f(*inputs_data.values()))
+
+    # user definitions can only include defined names or global names (whitelisted) packaged in a mathematically
+    # valid string* (the string is eval'd to ensure it's mathematically valid). Is it possible to name an input 
+    # after a target function in order to execute the target function? Don't know, depends on how good my 'find_name_like'
+    # method is. If it is effective at finding all name like substrings and comparing them to whitelisted substrings,
+    # we should be good. Basically, if the input isn't a grouping symbol like '(', '{', '[' or a math symbol like
+    # '+', '**', '//', it should show as a name like object and should then be compared to the local and global name
+    # dictionaries (whitelist) (perhaps rebuilding 'find_name_like' to look for groupers and math symbols is better than
+    # the current implemenation?).
