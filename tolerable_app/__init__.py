@@ -29,5 +29,6 @@ def create_app(test_config=None):
         from . import routes
         from . import util
         from . import symbolic
+        from . import simulate
 
     return app

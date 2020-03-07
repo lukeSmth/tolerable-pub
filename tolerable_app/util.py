@@ -127,5 +127,20 @@ def capture_settings(settings_form):
         if 'setting_' in setting_name}
 
 
+def fig_to_bin(fig, img_format='png'):
+    from io import BytesIO
+    bin_buffer = BytesIO()
+    fig.savefig(bin_buffer, format=img_format)
+    bin_buffer.seek(0)
+    return bin_buffer
+
+def bin_to_base64(bin_buffer):
+    from base64 import b64encode
+    return b64encode(bin_buffer.read())
+
+def fig_to_base64(fig, img_format='png'):
+    return bin_to_base64(fig_to_bin(fig, img_format))
+
+
 if __name__ == "__main__":
     pass

@@ -1,7 +1,7 @@
 import copy
 from .forms import SettingsForm
 from flask import current_app as app
-from flask import render_template, request, url_for, session, redirect
+from flask import render_template, request, url_for, session, redirect, send_file
 from .input_forms import input_list_form_factory
 from .output_forms import output_list_form_factory
 from .util import (
@@ -13,8 +13,11 @@ from .util import (
     generate_empty_output,
     capture_output_list_form_items,
     update_session_outputs,
-    capture_settings
+    capture_settings,
+    fig_to_base64
 )
+from .simulate import sim_inputs, sim_outputs, plot_sim_data
+import matplotlib.pyplot as plt
 
 
 # TODO / NOTES #
@@ -153,10 +156,33 @@ def settings():
 def simulate():
     pass
 
-
 @app.route('/result')
 def result():
-    return render_template('result.html')
+    inputs = session.get('inputs')
+    outputs = session.get('outputs')
+    settings = session.get('settings')
+
+    if not settings:
+        settings = {'setting_alpha': 0.05, 'setting_n': 5000}
+
+    inputs_plot_b64 = None
+    outputs_plot_b64 = None
+
+    if inputs:
+        inputs_data = sim_inputs(inputs=inputs, settings=settings)
+        fig, ax = plot_sim_data(inputs_data)
+        fig.suptitle('Independent Variable Probably Densities')
+        ax.legend()
+        inputs_plot_b64 = fig_to_base64(fig)
+        if outputs:
+            outputs_data = sim_outputs(outputs=outputs, inputs=inputs, inputs_data=inputs_data, settings=settings)
+            fig, ax = plot_sim_data(outputs_data)
+            fig.suptitle('Dependent Variable Probably Densities')
+            ax.legend()
+            outputs_plot_b64 = fig_to_base64(fig)
+
+
+    return render_template('result.html', inputs_plot_b64=inputs_plot_b64.decode('utf8'), outputs_plot_b64=outputs_plot_b64.decode('utf8'))
 
 
 @app.route('/report')

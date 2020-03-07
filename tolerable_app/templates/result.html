@@ -6,9 +6,10 @@
 {% endblock %}
 
 {% block content %}
-    {{ session['inputs'] }}
-    <br>
-    {{ session['outputs'] }}
-    <br>
-    {{ session['settings'] }}
+    <table style="width:100%">
+        <tr>
+            <td><img src="data:image/png;base64, {{ inputs_plot_b64 }}"/></td>
+            <td><img src="data:image/png;base64, {{ outputs_plot_b64 }}"/></td>
+        </tr>
+    </table>
 {% endblock %}

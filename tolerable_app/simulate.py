@@ -1,6 +1,7 @@
-# from . import symbolic as sym
+from .symbolic import parse_definition
 import numpy as np
 from sympy import lambdify
+import matplotlib.pyplot as plt
 
 # DISTRIBUTION SIMULATION #
 def sim_constant(input_details=None, settings=None):
@@ -104,7 +105,7 @@ def sim_outputs(outputs=None, inputs=None, inputs_data=None, settings=None):
         translation = {input_spec['input_name']: input_id for input_id, input_spec in inputs.items()}
         for output_id, output_spec in outputs.items():
             hum_defn = output_spec['output_defn']
-            mach_defn = sym.parse_definition(hum_defn, translation)
+            mach_defn = parse_definition(hum_defn, translation)
             f = lambdify(inputs.keys(), mach_defn, 'numpy')
             output_data = f(*inputs_data.values())
 
@@ -153,6 +154,9 @@ def plot_sim_data(sims_data=None, normalize=True, bin_width=None):
             else:
                 ax.bar(sim_data[0], len(sim_data), bin_width, color=next(prop_iter)['color'], alpha=0.5, label=sim_name)
 
+    ax.set_ylabel('PDF (%)')
+    ax.set_xlabel('Value')
+
     return fig, ax
 
 
@@ -168,34 +172,19 @@ def plot_sim_data(sims_data=None, normalize=True, bin_width=None):
 
 
 if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    import symbolic as sym
-    
+    from symbolic import parse_definition
 
-    inputs = {
-        'inputform_0': {'input_details': {'constant_input_value': 5.0}, 'input_name': 'Hello', 'input_type': 'constant'},
-        'inputform_1': {'input_details': {'normal_input_mean': 5.0, 'normal_input_stdev': 10.0},'input_name': 'Hello 2', 'input_type': 'normal'},
-        'inputform_2': {'input_details': {'uniform_input_max': 5.0, 'uniform_input_min': -5.0}, 'input_name': 'Hello 3', 'input_type': 'uniform'}
-    }
-
-    outputs = {
-        'outputform_0': {'output_defn': 'pi * (Hello 2 * sin(Hello)) + Hello 3', 'output_name': 'Pi', 'output_vis': True},
-        'outputform_1': {'output_defn': 'Hello 2 * 2', 'output_name': 'Test', 'output_vis': False}
-    }
-
+    inputs = {'inputform_0': {'input_details': {'normal_input_mean': 1.0, 'normal_input_stdev': 0.05}, 'input_name': 'Gland Depth', 'input_type': 'normal'}, 'inputform_1': {'input_details': {'normal_input_mean': 1.0, 'normal_input_stdev': 0.08}, 'input_name': 'Oring Chord', 'input_type': 'normal'}, 'inputform_2': {'input_details': {'normal_input_mean': 0.25, 'normal_input_stdev': 0.05}, 'input_name': 'Tab Height', 'input_type': 'normal'}}
+    outputs = {'outputform_0': {'output_defn': '1 - (Gland Depth - Tab Height)/(Oring Chord)', 'output_name': 'O-ring Compression', 'output_vis': True}}
     settings = {'setting_alpha': 0.05, 'setting_n': 5000}
 
-    inputs_data = sim_inputs(inputs, settings)
-
-    outputs_data = sim_outputs(outputs=outputs, inputs=inputs, inputs_data=inputs_data)
-
+    inputs_data = sim_inputs(inputs=inputs, settings=settings)
     fig, ax = plot_sim_data(inputs_data)
-
     ax.legend()
     plt.show()
 
-    fig2, ax2 = plot_sim_data(outputs_data)
-
-    ax2.legend()
+    outputs_data = sim_outputs(outputs=outputs, inputs=inputs, inputs_data=inputs_data, settings=settings)
+    fig, ax = plot_sim_data(outputs_data)
+    ax.legend()
     plt.show()
 
