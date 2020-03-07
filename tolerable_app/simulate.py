@@ -179,7 +179,7 @@ if __name__ == "__main__":
     }
 
     outputs = {
-        'outputform_0': {'output_defn': 'pi * (Hello 2 * Hello) + Hello 3', 'output_name': 'Pi', 'output_vis': True},
+        'outputform_0': {'output_defn': 'pi * (Hello 2 * sin(Hello)) + Hello 3', 'output_name': 'Pi', 'output_vis': True},
         'outputform_1': {'output_defn': 'Hello 2 * 2', 'output_name': 'Test', 'output_vis': False}
     }
 
